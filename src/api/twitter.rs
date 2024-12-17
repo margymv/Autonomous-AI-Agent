@@ -6,7 +6,7 @@ use tokio::time::sleep;
 use rand::Rng;
 
 use crate::models::{Tweet, TwitterResponse, TweetCreate};
-use crate::config::{TWITTER_API_BASE, MAX_RETRIES, RETRY_DELAY};
+use crate::utils::config::{TWITTER_API_BASE, MAX_RETRIES, RETRY_DELAY};
 
 pub struct TwitterApi {
     client: Client,
@@ -106,6 +106,35 @@ impl TwitterApi {
             .as_str()
             .map(String::from)
             .context("Failed to get user ID")
+    }
+
+    pub async fn get_mentions(&self, since_id: Option<&str>) -> Result<Vec<Tweet>> {
+        let url = format!("{}/tweets/search/recent", TWITTER_API_BASE);
+        let user_id = self.get_user_id().await?;
+        let query = format!("@{}", user_id);
+
+        let mut params = vec![
+            ("query", query.as_str()),
+            ("tweet.fields", "author_id,referenced_tweets"),
+            ("max_results", "100"),
+        ];
+
+        if let Some(id) = since_id {
+            params.push(("since_id", id));
+        }
+
+        let response = self.client
+            .get(&url)
+            .bearer_auth(&self.bearer_token)
+            .query(&params)
+            .send()
+            .await
+            .context("Failed to fetch mentions")?;
+
+        let tweets: TwitterResponse<Tweet> = response.json().await
+            .context("Failed to parse mentions response")?;
+
+        Ok(tweets.data.unwrap_or_default())
     }
 
     pub fn generate_reply(&self, tweet_text: &str) -> Result<Option<String>> {

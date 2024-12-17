@@ -2,7 +2,7 @@ use anyhow::{Result, Context};
 use ethers::{
     prelude::*,
     signers::{LocalWallet, Signer},
-    types::{TransactionRequest, U256},
+    types::{transaction::eip2718::TypedTransaction, TransactionRequest, U256, H256, H160},
 };
 use std::sync::Arc;
 use tracing::{info, warn};
@@ -65,15 +65,18 @@ impl WalletManager {
             .nonce(nonce)
             .gas_price(gas_price);
 
+        let typed_tx: TypedTransaction = tx.into();
         let signature = self.wallet
-            .sign_transaction(&tx.into())
+            .sign_transaction(&typed_tx)
             .await
             .context("Failed to sign transaction")?;
 
+        let serialized = typed_tx.rlp_signed(&signature);
         let tx_hash = self.provider
-            .send_raw_transaction(signature)
+            .send_raw_transaction(serialized)
             .await
-            .context("Failed to send transaction")?;
+            .context("Failed to send transaction")?
+            .tx_hash();
 
         info!("Sent tip with transaction hash: {:?}", tx_hash);
         

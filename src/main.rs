@@ -1,10 +1,8 @@
 mod api;
-mod auth;
-mod config;
+mod core;
 mod models;
-mod state;
-mod wallet;
-mod llm_client;
+mod services;
+mod utils;
 
 use anyhow::Result;
 use dotenv::dotenv;
@@ -12,10 +10,9 @@ use tracing::{info, warn};
 use std::time::Duration;
 use tokio::time::sleep;
 
-use crate::api::TwitterApi;
-use crate::llm_client::LLMClient;
-use crate::wallet::WalletManager;
-use crate::state::BotState;
+use api::TwitterApi;
+use services::{LLMClient, WalletManager, get_bearer_token};
+use core::BotState;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -27,7 +24,13 @@ async fn main() -> Result<()> {
     info!("Starting Atomus AI Twitter Agent");
 
     // Initialize components
-    let twitter_api = TwitterApi::new().await?;
+    let client = reqwest::Client::new();
+    let bearer_token = get_bearer_token(
+        &client,
+        &std::env::var("TWITTER_API_KEY")?,
+        &std::env::var("TWITTER_API_SECRET")?
+    ).await?;
+    let twitter_api = TwitterApi::new(client, bearer_token);
     let llm_client = LLMClient::new(
         std::env::var("CLAUDE_API_KEY")?
     )?;
@@ -57,7 +60,7 @@ async fn main() -> Result<()> {
 async fn process_mentions(
     twitter_api: &TwitterApi,
     llm_client: &LLMClient,
-    wallet_manager: &WalletManager,
+    _wallet_manager: &WalletManager,
     state: &mut BotState,
 ) -> Result<()> {
     let mentions = twitter_api.get_mentions(state.last_checked_mention_id.as_deref()).await?;
@@ -65,24 +68,24 @@ async fn process_mentions(
     for mention in mentions {
         info!("Processing mention: {}", mention.id);
 
-        // Get conversation context
-        let context: Vec<_> = state.conversation_history
-            .iter()
-            .map(|entry| entry.content.as_str())
-            .collect();
-
         // Generate reply using LLM
-        if let Ok(reply) = llm_client.generate_reply(&mention.text, &context).await {
-            twitter_api.reply_to_tweet(&reply, &mention.id).await?;
-        }
+        let author_id = mention.author_id.clone().unwrap_or_default();
+        let reply = llm_client.generate_reply(
+            &mention.text,
+            &[
+                &format!("User: {}", author_id),
+            ]
+        ).await?;
+
+        twitter_api.reply_to_tweet(&reply, &mention.id).await?;
 
         // Update state
         state.add_conversation(
             mention.id.clone(),
-            mention.author_id.unwrap_or_default(),
+            author_id.clone(),
             mention.text.clone(),
         );
-        state.update_user_interaction(mention.author_id.unwrap_or_default());
+        state.update_user_interaction(author_id);
 
         // Update last checked mention ID
         state.last_checked_mention_id = Some(mention.id);

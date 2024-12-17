@@ -4,7 +4,7 @@ use tracing::info;
 use base64::Engine;
 
 use crate::models::TokenResponse;
-use crate::config::TWITTER_AUTH_URL;
+use crate::utils::config::TWITTER_AUTH_URL;
 
 pub async fn get_bearer_token(client: &Client, api_key: &str, api_secret: &str) -> Result<String> {
     let auth = format!("{}:{}", api_key, api_secret);

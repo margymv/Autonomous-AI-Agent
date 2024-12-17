@@ -11,7 +11,7 @@ struct ClaudeRequest {
     temperature: f32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Message {
     role: String,
     content: String,

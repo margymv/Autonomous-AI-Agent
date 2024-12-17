@@ -32,9 +32,3 @@ pub struct TweetCreate {
 pub struct ReplySettings {
     pub in_reply_to_tweet_id: String,
 }
-
-#[derive(Debug, Deserialize)]
-pub struct TokenResponse {
-    pub access_token: String,
-    pub token_type: String,
-}
