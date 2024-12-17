@@ -7,9 +7,9 @@ use tracing::info;
 #[derive(Debug, Serialize)]
 struct ClaudeRequest {
     model: String,
+    system: String,
     messages: Vec<Message>,
     max_tokens: u32,
-    temperature: f32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,12 +20,12 @@ struct Message {
 
 #[derive(Debug, Deserialize)]
 struct ClaudeResponse {
-    choices: Vec<Choice>,
+    content: Vec<Content>,
 }
 
 #[derive(Debug, Deserialize)]
-struct Choice {
-    message: Message,
+struct Content {
+    text: String,
 }
 
 pub struct LLMClient {
@@ -43,16 +43,12 @@ impl LLMClient {
     }
 
     pub async fn generate_reply(&self, tweet_text: &str, context: &[&str]) -> Result<String> {
-        let mut messages = vec![
-            Message {
-                role: "system".to_string(),
-                content: "You are a helpful AI assistant managing a Twitter account. \
-                         Your responses should be concise, friendly, and appropriate for Twitter. \
-                         Never reveal sensitive information or private keys. \
-                         Focus on providing value while maintaining a professional tone."
-                         .to_string(),
-            }
-        ];
+        let system = "You are a helpful AI assistant managing a Twitter account. \
+                     Your responses should be concise, friendly, and appropriate for Twitter. \
+                     Never reveal sensitive information or private keys. \
+                     Focus on providing value while maintaining a professional tone.";
+
+        let mut messages = Vec::new();
 
         // Add context messages
         for ctx in context {
@@ -69,26 +65,30 @@ impl LLMClient {
         });
 
         let request = ClaudeRequest {
-            model: "gpt-4".to_string(), // or appropriate Claude model
+            model: "claude-3-opus-20240229".to_string(),
+            system: system.to_string(),
             messages,
             max_tokens: 280, // Twitter limit
-            temperature: 0.7,
         };
 
         let response = self.client
             .post("https://api.anthropic.com/v1/messages")
-            .header("Authorization", format!("Bearer {}", self.api_key))
+            .header("x-api-key", &self.api_key)
+            .header("anthropic-version", "2023-06-01")
             .json(&request)
             .send()
             .await
             .context("Failed to send request to Claude")?;
 
-        let response: ClaudeResponse = response.json().await
+        let response_text = response.text().await?;
+        println!("Claude response: {}", response_text);
+
+        let response: ClaudeResponse = serde_json::from_str(&response_text)
             .context("Failed to parse Claude response")?;
 
-        let reply = response.choices.first()
+        let reply = response.content.first()
             .context("No response from Claude")?
-            .message.content.clone();
+            .text.clone();
 
         info!("Generated reply: {}", reply);
         Ok(reply)

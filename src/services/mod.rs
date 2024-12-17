@@ -1,5 +1,6 @@
-mod llm;
-mod wallet;
+pub mod llm;
+pub mod rate_limiter;
+pub mod wallet;
 mod auth;
 
 pub use llm::LLMClient;
