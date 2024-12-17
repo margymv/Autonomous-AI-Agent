@@ -101,7 +101,11 @@ impl TwitterApi {
             .send()
             .await?;
 
-        let data: serde_json::Value = response.json().await?;
+        println!("Response status: {}", response.status());
+        let text = response.text().await?;
+        println!("Response body: {}", text);
+        
+        let data: serde_json::Value = serde_json::from_str(&text)?;
         data["data"]["id"]
             .as_str()
             .map(String::from)
@@ -163,5 +167,26 @@ impl TwitterApi {
                 }
             }
         }
+    }
+
+    pub async fn test_connection(&self) -> Result<bool> {
+        let url = "https://api.twitter.com/2/tweets/search/recent?query=rust";
+        
+        let response = self.client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", self.bearer_token))
+            .send()
+            .await?;
+            
+        let status = response.status();
+        println!("Response status: {}", status);
+        
+        // Get response body for debugging
+        let body = response.text().await?;
+        println!("Response body: {}", body);
+        
+        // Consider both 200 OK and 429 Rate Limit as successful connections
+        // since 429 confirms we can reach the API but are just rate limited
+        Ok(status.is_success() || status.as_u16() == 429)
     }
 }

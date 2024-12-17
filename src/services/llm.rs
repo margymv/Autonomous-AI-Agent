@@ -1,6 +1,7 @@
 use anyhow::{Result, Context};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use tracing::info;
 
 #[derive(Debug, Serialize)]
@@ -91,5 +92,31 @@ impl LLMClient {
 
         info!("Generated reply: {}", reply);
         Ok(reply)
+    }
+
+    pub async fn test_connection(&self) -> Result<bool> {
+        let url = "https://api.anthropic.com/v1/messages";
+        
+        let response = self.client
+            .post(url)
+            .header("x-api-key", &self.api_key)
+            .header("anthropic-version", "2023-06-01")
+            .json(&serde_json::json!({
+                "model": "claude-3-opus-20240229",
+                "max_tokens": 1,
+                "messages": [{
+                    "role": "user",
+                    "content": "Hi"
+                }]
+            }))
+            .send()
+            .await?;
+
+        let status = response.status();
+        println!("Claude API Response status: {}", status);
+        let text = response.text().await?;
+        println!("Claude API Response body: {}", text);
+        
+        Ok(status.is_success())
     }
 }
