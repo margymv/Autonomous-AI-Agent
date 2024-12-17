@@ -25,12 +25,13 @@ async fn main() -> Result<()> {
 
     // Initialize components
     let client = reqwest::Client::new();
-    let bearer_token = get_bearer_token(
-        &client,
-        &std::env::var("TWITTER_API_KEY")?,
-        &std::env::var("TWITTER_API_SECRET")?
-    ).await?;
-    let twitter_api = TwitterApi::new(client, bearer_token);
+    let twitter_api = TwitterApi::new(
+        client,
+        std::env::var("TWITTER_API_KEY")?,
+        std::env::var("TWITTER_API_SECRET")?,
+        std::env::var("TWITTER_ACCESS_TOKEN")?,
+        std::env::var("TWITTER_ACCESS_TOKEN_SECRET")?,
+    );
     let llm_client = LLMClient::new(
         std::env::var("CLAUDE_API_KEY")?
     )?;

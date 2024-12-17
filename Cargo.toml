@@ -20,3 +20,5 @@ chrono = { version = "0.4.24", features = ["serde"] }
 ethers = { version = "0.13.0", features = ["rustls"] }
 aes-gcm = "0.10.1"
 dotenv = "0.15.0"
+oauth1-request = "0.6.1"
+oauth-credentials = "0.3.0"

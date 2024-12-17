@@ -5,7 +5,7 @@ use std::time::Duration;
 use tokio::time::sleep;
 use anyhow::{Result, anyhow, Context};
 use rand::Rng;
-use oauth1_request::{OAuthRequest, HmacSha1};
+use oauth1_request::{Token, HMAC_SHA1};
 
 use crate::models::{Tweet, TwitterResponse};
 use crate::utils::config::{TWITTER_API_BASE, MAX_RETRIES, RETRY_DELAY};
@@ -48,15 +48,20 @@ impl TwitterApi {
     }
 
     async fn sign_request(&self, method: &str, url: &str) -> Result<String> {
-        let oauth = OAuthRequest::new(
-            method,
-            url,
+        let token = Token::from_parts(
             &self.consumer_key,
             &self.consumer_secret,
-            Some((&self.access_token, &self.access_token_secret)),
+            &self.access_token,
+            &self.access_token_secret
         );
         
-        Ok(oauth.sign_header::<HmacSha1>())
+        let auth_header = match method.to_uppercase().as_str() {
+            "GET" => oauth1_request::get(url, &(), &token, HMAC_SHA1),
+            "POST" => oauth1_request::post(url, &(), &token, HMAC_SHA1),
+            _ => return Err(anyhow!("Unsupported HTTP method: {}", method))
+        };
+        
+        Ok(auth_header)
     }
 
     pub async fn get_tweet_with_retry(&self, tweet_id: &str, max_retries: u32) -> Result<String> {
@@ -149,10 +154,11 @@ impl TwitterApi {
             .send()
             .await?;
 
-        if !response.status().is_success() {
+        let status = response.status();
+        if !status.is_success() {
             let error_text = response.text().await?;
             return Err(anyhow!("Failed to reply to tweet (status {}): {}", 
-                response.status(), error_text));
+                status, error_text));
         }
 
         Ok(())
@@ -208,8 +214,10 @@ impl TwitterApi {
             .send()
             .await?;
 
-        if !response.status().is_success() {
-            println!("Failed to like tweet: {}", response.text().await?);
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response.text().await?;
+            println!("Failed to like tweet: {}", error_text);
         }
 
         Ok(())
@@ -340,5 +348,40 @@ impl TwitterApi {
             .to_string();
             
         Ok(tweet_text)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use reqwest::Client;
+
+    fn create_test_client() -> TwitterApi {
+        TwitterApi::new(
+            Client::new(),
+            "test_consumer_key".to_string(),
+            "test_consumer_secret".to_string(),
+            "test_access_token".to_string(),
+            "test_access_token_secret".to_string(),
+        )
+    }
+
+    #[tokio::test]
+    async fn test_sign_request() {
+        let client = create_test_client();
+        let method = "GET";
+        let url = "https://api.twitter.com/2/tweets/123";
+        
+        let result = client.sign_request(method, url).await;
+        assert!(result.is_ok(), "Failed to sign request: {:?}", result);
+        
+        let header = result.unwrap();
+        assert!(header.starts_with("OAuth "), "Header should start with 'OAuth'");
+        assert!(header.contains("oauth_consumer_key=\"test_consumer_key\""), "Header should contain consumer key");
+        assert!(header.contains("oauth_token=\"test_access_token\""), "Header should contain access token");
+        assert!(header.contains("oauth_signature_method=\"HMAC-SHA1\""), "Header should use HMAC-SHA1");
+        assert!(header.contains("oauth_nonce="), "Header should contain nonce");
+        assert!(header.contains("oauth_timestamp="), "Header should contain timestamp");
+        assert!(header.contains("oauth_signature="), "Header should contain signature");
     }
 }
