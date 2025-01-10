@@ -1,93 +1,120 @@
-import dotenv from 'dotenv';
-import { TwitterApi } from './services/TwitterApi';
-import { LLMClient } from './services/LLMClient';
-import { WalletManager } from './services/WalletManager';
-import { BotState, Conversation } from './types';
+import { AgentState, Conversation, Tweet } from './types';
+import { loadConfig } from './config/config';
+import { TwitterService } from './services/TwitterService';
+import { LLMService } from './services/LLMService';
+import { WalletService } from './services/WalletService';
+import { logger } from './utils/logger';
 
-// Load environment variables
-dotenv.config();
-
-class Bot {
-  private twitterApi: TwitterApi;
-  private llmClient: LLMClient;
-  private walletManager: WalletManager;
-  private state: BotState = {
-    lastCheckedMentionId: null,
-    conversations: new Map<string, Conversation>(),
+class AutonomousAgent {
+  private config = loadConfig();
+  private twitter: TwitterService;
+  private llm: LLMService;
+  private wallet: WalletService;
+  private state: AgentState = {
+    conversations: new Map(),
     userInteractions: new Map(),
   };
 
   constructor() {
     // Initialize services
-    this.twitterApi = new TwitterApi(
-      process.env.TWITTER_API_KEY!,
-      process.env.TWITTER_API_SECRET!,
-      process.env.TWITTER_ACCESS_TOKEN!,
-      process.env.TWITTER_ACCESS_TOKEN_SECRET!
+    this.twitter = new TwitterService(
+      this.config.twitter.apiKey,
+      this.config.twitter.apiSecret,
+      this.config.twitter.accessToken,
+      this.config.twitter.accessTokenSecret
     );
 
-    this.llmClient = new LLMClient(
-      process.env.CLAUDE_API_KEY!
+    this.llm = new LLMService(
+      this.config.llm.apiKey,
+      this.config.llm.model,
+      this.config.llm.maxTokens
     );
 
-    this.walletManager = new WalletManager(
-      process.env.WALLET_PRIVATE_KEY!,
-      process.env.ETH_RPC_URL!
+    this.wallet = new WalletService(
+      this.config.wallet.privateKey,
+      this.config.wallet.rpcUrl
     );
   }
 
-  async processMentions(): Promise<void> {
+  private async processMention(tweet: Tweet): Promise<void> {
     try {
-      const mentions = await this.twitterApi.getMentions(this.state.lastCheckedMentionId || undefined);
+      logger.info(`Processing mention: ${tweet.id}`);
 
-      for (const mention of mentions) {
-        console.log(`Processing mention: ${mention.id}`);
-
-        // Generate reply using LLM
-        const reply = await this.llmClient.generateReply(
-          mention.text,
-          [`User: ${mention.authorId}`]
-        );
-
-        // Reply to tweet
-        await this.twitterApi.replyToTweet(reply, mention.id);
-
-        // Update state
-        this.state.conversations.set(mention.id, {
-          mentionId: mention.id,
-          authorId: mention.authorId,
-          text: mention.text,
-          timestamp: new Date(),
-        });
-
-        // Update user interaction
-        const userInteraction = this.state.userInteractions.get(mention.authorId) || {
-          userId: mention.authorId,
-          interactionCount: 0,
+      // Get or create conversation
+      let conversation = this.state.conversations.get(tweet.conversationId || tweet.id);
+      if (!conversation) {
+        conversation = {
+          id: tweet.conversationId || tweet.id,
+          tweets: [],
+          participants: [],
+          context: [],
           lastInteraction: new Date(),
         };
-        userInteraction.interactionCount++;
-        userInteraction.lastInteraction = new Date();
-        this.state.userInteractions.set(mention.authorId, userInteraction);
-
-        // Update last checked mention ID
-        this.state.lastCheckedMentionId = mention.id;
+        this.state.conversations.set(conversation.id, conversation);
       }
+
+      // Update conversation
+      conversation.tweets.push(tweet);
+      conversation.lastInteraction = new Date();
+
+      // Get user interaction data
+      const userInteraction = this.state.userInteractions.get(tweet.authorId) || {
+        userId: tweet.authorId,
+        lastInteraction: new Date(),
+        interactionCount: 0,
+        transactions: [],
+      };
+      userInteraction.interactionCount++;
+      userInteraction.lastInteraction = new Date();
+      this.state.userInteractions.set(tweet.authorId, userInteraction);
+
+      // Generate context for LLM
+      const context = conversation.tweets.map(t => t.text);
+
+      // Generate reply
+      const reply = await this.llm.generateReply(
+        tweet.text,
+        context,
+        'You are a helpful AI assistant on Twitter.'
+      );
+
+      // Send reply
+      await this.twitter.replyToTweet(reply, tweet.id);
+      logger.info(`Replied to tweet: ${tweet.id}`);
+
     } catch (error) {
-      console.error('Error processing mentions:', error);
+      logger.error('Error processing mention:', error);
+      throw error;
     }
   }
 
   async start(): Promise<void> {
-    console.log('Starting Autonomous AI Twitter Agent');
+    logger.info('Starting Autonomous AI Agent');
     
     while (true) {
-      await this.processMentions();
-      await new Promise(resolve => setTimeout(resolve, 60000)); // Wait for 60 seconds
+      try {
+        // Check mentions
+        const mentions = await this.twitter.getMentions(this.state.lastCheckedMentionId);
+        
+        for (const mention of mentions) {
+          await this.processMention(mention);
+          this.state.lastCheckedMentionId = mention.id;
+        }
+
+        // Wait before next check
+        await new Promise(resolve => setTimeout(resolve, 60000)); // 1 minute delay
+      } catch (error) {
+        logger.error('Error in main loop:', error);
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 300000)); // 5 minutes delay on error
+      }
     }
   }
 }
 
-// Start the bot
-const bot = new Bot();
-bot.start().catch(console.error);
+// Start the agent
+const agent = new AutonomousAgent();
+agent.start().catch(error => {
+  logger.error('Fatal error:', error);
+  process.exit(1);
+});

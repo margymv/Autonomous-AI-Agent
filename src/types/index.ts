@@ -1,24 +1,78 @@
-export interface BotState {
-  lastCheckedMentionId: string | null;
-  conversations: Map<string, Conversation>;
-  userInteractions: Map<string, UserInteraction>;
+export interface Tweet {
+  id: string;
+  text: string;
+  authorId: string;
+  createdAt: Date;
+  conversationId?: string;
+  inReplyToUserId?: string;
+  referencedTweets?: {
+    type: 'replied_to' | 'quoted' | 'retweeted';
+    id: string;
+  }[];
+}
+
+export interface User {
+  id: string;
+  username: string;
+  name: string;
+  description?: string;
+  metrics?: {
+    followersCount: number;
+    followingCount: number;
+    tweetCount: number;
+  };
 }
 
 export interface Conversation {
-  mentionId: string;
-  authorId: string;
-  text: string;
-  timestamp: Date;
-}
-
-export interface UserInteraction {
-  userId: string;
-  interactionCount: number;
+  id: string;
+  tweets: Tweet[];
+  participants: User[];
+  context: string[];
   lastInteraction: Date;
 }
 
-export interface TwitterMention {
+export interface WalletTransaction {
   id: string;
-  authorId: string;
-  text: string;
+  from: string;
+  to: string;
+  amount: string;
+  currency: string;
+  timestamp: Date;
+  status: 'pending' | 'completed' | 'failed';
+  txHash?: string;
+}
+
+export interface AgentConfig {
+  twitter: {
+    apiKey: string;
+    apiSecret: string;
+    accessToken: string;
+    accessTokenSecret: string;
+  };
+  llm: {
+    provider: 'claude';
+    apiKey: string;
+    model: string;
+    maxTokens: number;
+  };
+  wallet: {
+    network: string;
+    rpcUrl: string;
+    privateKey: string;
+  };
+  monitoring: {
+    logLevel: 'debug' | 'info' | 'warn' | 'error';
+    enableMetrics: boolean;
+  };
+}
+
+export interface AgentState {
+  conversations: Map<string, Conversation>;
+  lastCheckedMentionId?: string;
+  userInteractions: Map<string, {
+    userId: string;
+    lastInteraction: Date;
+    interactionCount: number;
+    transactions: WalletTransaction[];
+  }>;
 }
