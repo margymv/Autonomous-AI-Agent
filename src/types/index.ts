@@ -48,6 +48,7 @@ export interface AgentConfig {
     apiSecret: string;
     accessToken: string;
     accessTokenSecret: string;
+    bearerToken: string;
   };
   llm: {
     provider: 'claude';
