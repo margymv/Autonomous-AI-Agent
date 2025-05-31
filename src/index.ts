@@ -40,8 +40,8 @@ async function main() {
 
     logger.info('Starting Autonomous AI Agent');
 
-    // Start processing tweets every minute
-    await btbTweetService.startProcessing(60000);
+    // Start processing tweets every 5 minutes
+    await btbTweetService.startProcessing(300000); // 5 minutes = 300000ms
   } catch (error) {
     logger.error('Error in main loop:', error);
     process.exit(1);

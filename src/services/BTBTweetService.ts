@@ -9,9 +9,10 @@ export class BTBTweetService {
   private openRouterService: OpenRouterService;
   private knowledgeBaseService: KnowledgeBaseService;
   private lastProcessedTweetId?: string;
+  private processedTweetIds: Set<string> = new Set(); // Track ALL replied tweets
   private isProcessing: boolean = false;
   private nextPollTime: Date = new Date();
-  private defaultIntervalMs: number = 60000; // 1 minute default
+  private defaultIntervalMs: number = 300000; // 5 minutes default
 
   constructor(
     twitterService: TwitterService,
@@ -84,7 +85,8 @@ export class BTBTweetService {
       for (const tweet of btbTweets) {
         try {
           // Skip if we've already processed this tweet
-          if (this.lastProcessedTweetId && tweet.id <= this.lastProcessedTweetId) {
+          if (this.processedTweetIds.has(tweet.id)) {
+            logger.info('Already replied to this tweet, skipping', { tweetId: tweet.id });
             continue;
           }
 
@@ -117,7 +119,10 @@ export class BTBTweetService {
 
           logger.info('Successfully processed tweet', { tweetId: tweet.id });
           
-          // Update last processed tweet ID
+          // Mark this tweet as processed
+          this.processedTweetIds.add(tweet.id);
+          
+          // Update last processed tweet ID for next fetch
           this.lastProcessedTweetId = tweet.id;
 
           // Add a small delay between processing tweets to avoid rate limits
