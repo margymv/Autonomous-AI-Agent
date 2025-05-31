@@ -1,165 +1,210 @@
-# Autonomous AI Agent
+# BTB Finance Autonomous AI Agent 🤖
 
-Welcome to the **Autonomous AI Agent** project by [@btb_finance](https://twitter.com/btb_finance) and the [BTBFinance](https://t.me/BTBFinance) community.  
-This project aims to create an autonomous AI-driven agent that can manage social media accounts (starting with Twitter), interact with users, remember context, handle tasks like sending tips (cryptocurrency microtransactions), and more—all with minimal human intervention. The long-term vision is to expand beyond Twitter to multiple social media platforms.
-
-We're building this in **TypeScript** for type safety, extensive ecosystem support, and rapid development capabilities.
+An intelligent Twitter bot that monitors mentions of $BTB, provides information about BTB Finance, and engages with the community using AI-powered responses.
 
 **Repository:** [https://github.com/btb-finance/Autonomous-AI-Agent](https://github.com/btb-finance/Autonomous-AI-Agent)
 
-## Project Goals
+## Features
 
-1. **Autonomous Social Media Management**  
-   The agent should:
-   - Read mentions, replies, and direct messages
-   - Generate and publish tweets autonomously using integrated LLMs (e.g., Claude API)
-   - Maintain a rolling memory and conversational context
-   - Monitor specific topics and hashtags (e.g., $BTB)
-   - Engage with community through likes and replies
-   
-2. **Cryptocurrency Tipping and Transactions**  
-   The agent can:
-   - Generate and securely store a wallet address and private keys
-   - Send small crypto tips to users who meet certain criteria
-   - Interact with blockchain APIs using ethers.js
-   - Track transaction history and user interactions
-   - Implement secure key management and encryption
-   
-3. **Scalable and Extensible Architecture**  
-   Our code aims to:
-   - Be easily extensible to other social media platforms
-   - Allow integration with various LLM providers and conversation strategies
-   - Encourage community contributions and improvements
-   - Support multiple blockchain networks and token standards
+- 🐦 **Twitter Integration**: Monitors mentions, replies to tweets, and posts updates
+- 🤖 **AI-Powered Responses**: Uses Claude 3.5 Sonnet via OpenRouter for intelligent replies
+- 📚 **Knowledge Base**: Maintains information about BTB Finance for accurate responses
+- 🔄 **Real-time Processing**: Continuously monitors Twitter for new mentions
+- 💰 **Wallet Integration**: Ready for future cryptocurrency features
+- 🛡️ **Rate Limit Management**: Handles Twitter API rate limits gracefully
+- ⚡ **TypeScript**: Built with TypeScript for type safety and better developer experience
 
-## Key Features
+## Prerequisites
 
-- **TypeScript Backend:**  
-  - Strong type system for enhanced code reliability
-  - Modern async/await patterns for efficient I/O operations
-  - Rich ecosystem of NPM packages
-  - Easy integration with Node.js
-  
-- **LLM Integration (Claude):**  
-  - Use language model APIs for natural language understanding and generation
-  - Context-aware responses with conversation history
-  - Custom prompt engineering for specific use cases
-  - Fallback mechanisms for API failures
+- Node.js v16 or higher
+- npm or yarn
+- Twitter Developer Account with API access
+- OpenRouter API account
+- Git
 
-- **Secure Storage of Keys and State:**  
-  - Environment-based configuration using dotenv
-  - Private keys and secrets are never hardcoded
-  - Secure key management practices
-  - Regular state persistence
+## Setup Instructions
 
-- **Event-Driven Architecture:**  
-  - Periodically fetch mentions from Twitter
-  - Process each event through the LLM for intelligent responses
-  - Rate limiting and exponential backoff
-  - Error handling and retry mechanisms
+### 1. Clone the Repository
 
-- **Compliance and Safety Controls:**  
-  - Guardrails at the prompt and code level
-  - Content filtering and moderation
-  - Rate limiting and anti-spam measures
-  - Audit logging for all operations
+```bash
+git clone https://github.com/btb-finance/autonomous-ai-agent.git
+cd autonomous-ai-agent
+```
 
-## Project Status
+### 2. Install Dependencies
 
-- **Current Implementation:**  
-  Features implemented:
-  - Twitter API integration using twitter-api-v2
-  - Claude API integration for LLM capabilities
-  - Ethereum wallet management with ethers.js
-  - State management and conversation tracking
-  - Rate limiting and error handling
-  
-- **Contributions Needed:**  
-  Priority areas:
-  - Enhanced conversation strategies
-  - Additional social media platform integrations
-  - Improved security measures
-  - Testing and documentation
-  - UI/UX for monitoring and configuration
+```bash
+npm install
+```
 
-## Getting Started
+### 3. Configure Twitter API
 
-### Prerequisites
+1. Go to [Twitter Developer Portal](https://developer.twitter.com)
+2. Create a new app or use existing one
+3. Navigate to "User authentication settings"
+4. Ensure OAuth 1.0a is enabled with **"Read and write"** permissions
+5. Generate the following credentials:
+   - API Key and Secret
+   - Access Token and Secret
+   - Bearer Token
+   - Client ID and Secret (OAuth 2.0)
 
-- **Node.js and npm:**  
-  - Node.js (v16 or later) from [https://nodejs.org/](https://nodejs.org/)
-  - Required packages listed in `package.json`
+### 4. Set Up OpenRouter
 
-- **Twitter Developer Account:**  
-  Required credentials:
-  - API Key and Secret
-  - Access Token and Secret
-  - App permissions for read/write access
+1. Sign up at [OpenRouter](https://openrouter.ai)
+2. Generate an API key
+3. Ensure you have credits for Claude 3.5 Sonnet usage
 
-- **Claude API Key:**  
-  - Claude API key from [Anthropic](https://www.anthropic.com/)
-  - Rate limits and usage quotas consideration
+### 5. Configure Environment Variables
 
-### Installation
+Create a `.env` file in the project root:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/btb-finance/Autonomous-AI-Agent.git
-   cd Autonomous-AI-Agent
-   ```
+```bash
+# Twitter API OAuth 1.0a Credentials
+TWITTER_API_KEY=your_api_key_here
+TWITTER_API_SECRET=your_api_secret_here
+TWITTER_ACCESS_TOKEN=your_access_token_here
+TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret_here
+TWITTER_BEARER_TOKEN=your_bearer_token_here
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+# Twitter OAuth 2.0 Credentials (optional, for future features)
+TWITTER_CLIENT_ID=your_client_id_here
+TWITTER_CLIENT_SECRET=your_client_secret_here
 
-3. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Fill in your API keys and credentials
+# OpenRouter API Configuration
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
 
-4. Build the project:
-   ```bash
-   npm run build
-   ```
+# Ethereum Wallet Configuration (optional)
+WALLET_PRIVATE_KEY=your_wallet_private_key_here
+ETH_RPC_URL=your_ethereum_rpc_url_here
+ETH_NETWORK=mainnet
+```
 
-5. Start the agent:
-   ```bash
-   npm start
-   ```
+### 6. Build the Project
 
-For development:
+```bash
+npm run build
+```
+
+## Running the Bot
+
+### Development Mode
+
 ```bash
 npm run dev
 ```
 
+### Production Mode
+
+```bash
+npm run build
+npm start
+```
+
+## Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Run in development mode with hot reload |
+| `npm start` | Run the production build |
+| `npm run build` | Compile TypeScript to JavaScript |
+| `npm test` | Run test suite |
+| `npm run test:tweet` | Test tweet posting functionality |
+| `npm run test:mentions` | Test mention fetching |
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format code with Prettier |
+
+## Testing Features
+
+### Test Tweet Posting
+```bash
+npm run test:tweet
+```
+This will post a test tweet from your configured account.
+
+### Test Mention Monitoring
+```bash
+npm run test:mentions
+```
+This will fetch the latest mentions of your account.
+
+## How It Works
+
+1. **Mention Monitoring**: The bot checks for new mentions every 60 seconds
+2. **$BTB Detection**: Filters mentions containing "$BTB"
+3. **Question Extraction**: Extracts the actual question from the tweet
+4. **Knowledge Base Search**: Searches the local knowledge base for relevant information
+5. **AI Response Generation**: Uses Claude 3.5 Sonnet to generate an appropriate response
+6. **Tweet Reply**: Posts the response as a reply to the original tweet
+
 ## Project Structure
 
 ```
-src/
-├── index.ts              # Main application entry point
-├── services/            # Core services
-│   ├── TwitterApi.ts    # Twitter API integration
-│   ├── LLMClient.ts     # Claude API integration
-│   └── WalletManager.ts # Ethereum wallet management
-└── types/              # TypeScript type definitions
-    └── index.ts        # Shared types and interfaces
+├── src/
+│   ├── services/          # Core service implementations
+│   │   ├── TwitterService.ts      # Twitter API integration
+│   │   ├── OpenRouterService.ts   # AI service integration
+│   │   ├── BTBTweetService.ts     # Main bot logic
+│   │   ├── KnowledgeBaseService.ts # Knowledge management
+│   │   └── WalletService.ts       # Crypto wallet integration
+│   ├── config/            # Configuration management
+│   ├── types/             # TypeScript type definitions
+│   ├── utils/             # Utility functions
+│   └── index.ts           # Application entry point
+├── knowledge_base/        # BTB Finance information
+├── .env.example          # Environment variables template
+└── package.json          # Project dependencies
 ```
 
-## Configuration
+## Twitter API Limits
 
-The application uses environment variables for configuration:
+Be aware of Twitter API rate limits:
+- **Free tier**: 500 posts/month, limited read access
+- **Basic tier**: 10,000 posts/month
+- **Pro tier**: 1,000,000 posts/month
 
-- `TWITTER_API_KEY` - Twitter API key
-- `TWITTER_API_SECRET` - Twitter API secret
-- `TWITTER_ACCESS_TOKEN` - Twitter access token
-- `TWITTER_ACCESS_TOKEN_SECRET` - Twitter access token secret
-- `CLAUDE_API_KEY` - Claude API key
-- `WALLET_PRIVATE_KEY` - Ethereum wallet private key
-- `ETH_RPC_URL` - Ethereum RPC URL
+The bot includes automatic rate limit handling and will pause when limits are reached.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **403 Forbidden Error**: Your Twitter app needs "Read and write" permissions
+2. **401 Unauthorized**: Check your API credentials are correct
+3. **Rate Limit Errors**: The bot will automatically wait and retry
+4. **OpenRouter Errors**: Ensure you have credits and valid API key
+
+### Debug Mode
+
+Enable detailed logging by setting the log level in your configuration:
+```typescript
+monitoring: {
+  logLevel: 'debug'
+}
+```
+
+## Security Notes
+
+- Never commit your `.env` file
+- Keep your API keys and tokens secure
+- Regularly rotate your access tokens
+- Use environment variables for all sensitive data
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Submit a pull request
+
+## Support
+
+For issues and questions:
+- Open an issue on GitHub
+- Tweet at @btb_finance
+- Check the [documentation](https://btb.finance/docs)
 
 ## License
 

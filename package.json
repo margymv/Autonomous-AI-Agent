@@ -8,6 +8,8 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
+    "test:tweet": "ts-node src/tests/test-post-tweet.ts",
+    "test:mentions": "ts-node src/tests/test-mentions.ts",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts"
   },

@@ -1,12 +1,12 @@
 import { TwitterService } from './TwitterService';
-import { ClaudeService } from './ClaudeService';
+import { OpenRouterService } from './OpenRouterService';
 import { KnowledgeBaseService } from './KnowledgeBaseService';
 import { logger } from '../utils/logger';
 import { Tweet, RateLimit } from '../types';
 
 export class BTBTweetService {
   private twitterService: TwitterService;
-  private claudeService: ClaudeService;
+  private openRouterService: OpenRouterService;
   private knowledgeBaseService: KnowledgeBaseService;
   private lastProcessedTweetId?: string;
   private isProcessing: boolean = false;
@@ -15,11 +15,11 @@ export class BTBTweetService {
 
   constructor(
     twitterService: TwitterService,
-    claudeService: ClaudeService,
+    openRouterService: OpenRouterService,
     knowledgeBaseService: KnowledgeBaseService
   ) {
     this.twitterService = twitterService;
-    this.claudeService = claudeService;
+    this.openRouterService = openRouterService;
     this.knowledgeBaseService = knowledgeBaseService;
   }
 
@@ -93,8 +93,8 @@ export class BTBTweetService {
           // Get knowledge base context
           const prompt = await this.knowledgeBaseService.searchKnowledge(question);
 
-          // Get Claude's response
-          const claudeResponse = await this.claudeService.getResponse(prompt);
+          // Get OpenRouter's response
+          const claudeResponse = await this.openRouterService.getResponse(prompt);
 
           // Format the response to fit Twitter's character limit
           const formattedResponse = this.formatTwitterResponse(claudeResponse);

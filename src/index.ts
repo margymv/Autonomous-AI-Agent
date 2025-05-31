@@ -1,7 +1,7 @@
 import path from 'path';
 import { config } from 'dotenv';
 import { TwitterService } from './services/TwitterService';
-import { ClaudeService } from './services/ClaudeService';
+import { OpenRouterService } from './services/OpenRouterService';
 import { KnowledgeBaseService } from './services/KnowledgeBaseService';
 import { BTBTweetService } from './services/BTBTweetService';
 import { logger } from './utils/logger';
@@ -22,8 +22,9 @@ async function main() {
       process.env.TWITTER_BEARER_TOKEN!
     );
 
-    const claudeService = new ClaudeService(
-      process.env.CLAUDE_API_KEY!
+    const openRouterService = new OpenRouterService(
+      process.env.OPENROUTER_API_KEY!,
+      process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet'
     );
 
     const knowledgeBaseService = new KnowledgeBaseService(
@@ -33,7 +34,7 @@ async function main() {
     // Initialize BTB tweet service
     const btbTweetService = new BTBTweetService(
       twitterService,
-      claudeService,
+      openRouterService,
       knowledgeBaseService
     );
 

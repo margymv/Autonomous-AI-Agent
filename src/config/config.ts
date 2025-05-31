@@ -35,7 +35,8 @@ export function loadConfig(): AgentConfig {
   logger.debug('Environment variables:', {
     TWITTER_API_KEY: process.env.TWITTER_API_KEY,
     TWITTER_BEARER_TOKEN: process.env.TWITTER_BEARER_TOKEN ? '[REDACTED]' : undefined,
-    CLAUDE_API_KEY: process.env.CLAUDE_API_KEY ? '[REDACTED]' : undefined,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY ? '[REDACTED]' : undefined,
+    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
     WALLET_PRIVATE_KEY: process.env.WALLET_PRIVATE_KEY ? '[REDACTED]' : undefined,
     ETH_RPC_URL: process.env.ETH_RPC_URL,
   });
@@ -49,9 +50,9 @@ export function loadConfig(): AgentConfig {
       bearerToken: process.env.TWITTER_BEARER_TOKEN || '',
     },
     llm: {
-      provider: 'claude',
-      apiKey: process.env.CLAUDE_API_KEY || '',
-      model: 'claude-3-opus-20240229',
+      provider: 'openrouter',
+      apiKey: process.env.OPENROUTER_API_KEY || '',
+      model: process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet',
       maxTokens: 1024,
     },
     wallet: {

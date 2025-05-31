@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 import { TwitterService } from './services/TwitterService';
-import { ClaudeService } from './services/ClaudeService';
+import { OpenRouterService } from './services/OpenRouterService';
 import { KnowledgeBaseService } from './services/KnowledgeBaseService';
 import { loadConfig } from './config/config';
 import { logger } from './utils/logger';
@@ -37,7 +37,7 @@ async function main() {
     appConfig.twitter.bearerToken,
   );
 
-  const claudeService = new ClaudeService(appConfig.llm.apiKey);
+  const openRouterService = new OpenRouterService(appConfig.llm.apiKey, appConfig.llm.model);
   const knowledgeBaseService = new KnowledgeBaseService(
     path.join(__dirname, '../knowledge_base/btb_info.txt')
   );
@@ -96,7 +96,7 @@ Keep the response under 280 characters to fit in a tweet.`;
 
     while (retries > 0 && !response) {
       try {
-        response = await claudeService.getResponse(prompt);
+        response = await openRouterService.getResponse(prompt);
         // Ensure response fits in a tweet
         if (response.length > 280) {
           response = response.substring(0, 277) + '...';

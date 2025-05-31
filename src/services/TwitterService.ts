@@ -72,6 +72,32 @@ export class TwitterService {
     }
   }
 
+  private isApiError(error: any): boolean {
+    return error?.errors || error?.code || error?.message?.includes('API');
+  }
+
+  private handleApiError(error: any): void {
+    if (error?.errors && Array.isArray(error.errors)) {
+      for (const apiError of error.errors) {
+        if (apiError.code === 453) {
+          logger.error('Access level error: You need elevated access to use this endpoint');
+          throw new Error('Twitter API access level insufficient. Please upgrade your Twitter API access.');
+        }
+        logger.error(`Twitter API Error [${apiError.code}]: ${apiError.message}`);
+      }
+    }
+    
+    if (error?.code === 403) {
+      logger.error('Forbidden: Check your Twitter API permissions and access level');
+      throw new Error('Twitter API forbidden. Check permissions.');
+    }
+    
+    if (error?.code === 401) {
+      logger.error('Unauthorized: Check your Twitter API credentials');
+      throw new Error('Twitter API unauthorized. Check credentials.');
+    }
+  }
+
   private async retryOperation<T>(operation: () => Promise<T>): Promise<T> {
     let lastError: any;
     
@@ -80,6 +106,11 @@ export class TwitterService {
         return await operation();
       } catch (error: any) {
         lastError = error;
+        
+        // Handle X API specific errors
+        if (this.isApiError(error)) {
+          this.handleApiError(error);
+        }
         
         if (error.code === 429 || (typeof error.message === 'string' && error.message.includes('Rate limit'))) {
           await this.handleRateLimit(error);
@@ -120,7 +151,7 @@ export class TwitterService {
           expansions: ['referenced_tweets.id', 'in_reply_to_user_id', 'author_id'],
           'tweet.fields': ['created_at', 'conversation_id', 'referenced_tweets', 'author_id'],
           'user.fields': ['id', 'name', 'username'],
-          max_results: 1, // Only fetch 1 tweet for testing
+          max_results: 5, // Minimum allowed by Twitter API
         })
       );
 
@@ -222,5 +253,44 @@ export class TwitterService {
       logger.error('Failed to fetch user info:', error);
       throw error;
     }
+  }
+
+  async postTweet(text: string): Promise<string> {
+    return this.retryOperation(async () => {
+      try {
+        if (!this.initialized) {
+          await this.initializeUserId();
+        }
+        
+        logger.info('Posting tweet:', { textLength: text.length });
+        
+        // Validate tweet length
+        if (text.length > 280) {
+          throw new Error(`Tweet too long: ${text.length} characters (max 280)`);
+        }
+        
+        const result = await this.client.v2.tweet(text);
+        
+        if (!result.data?.id) {
+          throw new Error('Failed to post tweet: No tweet ID returned');
+        }
+        
+        logger.info(`Successfully posted tweet with ID: ${result.data.id}`);
+        return result.data.id;
+      } catch (error: any) {
+        logger.error('Error posting tweet:', error);
+        
+        // Check for specific error codes
+        if (error?.errors) {
+          for (const apiError of error.errors) {
+            if (apiError.code === 187) {
+              throw new Error('Duplicate tweet: This tweet has already been posted');
+            }
+          }
+        }
+        
+        throw error;
+      }
+    });
   }
 }
