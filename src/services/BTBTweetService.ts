@@ -67,7 +67,13 @@ export class BTBTweetService {
       // Update next poll time based on rate limit info
       this.updateNextPollTime(rateLimit);
 
-      // Filter for tweets containing $BTB
+      // Log all mentions for debugging
+      logger.info(`Total mentions received: ${mentions.length}`);
+      mentions.forEach((tweet: Tweet) => {
+        logger.debug(`Tweet ${tweet.id}: "${tweet.text}"`);
+      });
+
+      // Filter for tweets containing $BTB (case-insensitive)
       const btbTweets = mentions.filter((tweet: Tweet) => 
         tweet.text.toLowerCase().includes('$btb')
       );
