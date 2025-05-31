@@ -100,11 +100,11 @@ export class BTBTweetService {
           const knowledgeContext = await this.knowledgeBaseService.searchKnowledge(question);
           
           // Create prompt with word limit instruction
-          const prompt = `Based on this context about BTB Finance: ${knowledgeContext}
+          const prompt = `You are the BTB Finance Twitter account. Here's information about BTB: ${knowledgeContext}
           
-          Please answer this question: "${question}"
+          Someone tweeted: "${question}"
           
-          IMPORTANT: Keep your response under 200 words and make it suitable for a Twitter reply. Be concise and informative.`;
+          Reply naturally and conversationally. If the info isn't in the knowledge base, still engage positively with their tweet. Never say "based on the knowledge base" or "limited information". Just respond like a normal crypto project would on Twitter. Keep it under 200 words, friendly and engaging.`;
 
           // Get OpenRouter's response
           const claudeResponse = await this.openRouterService.getResponse(prompt);

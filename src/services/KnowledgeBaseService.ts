@@ -25,22 +25,13 @@ export class KnowledgeBaseService {
     try {
       const knowledgeBase = await this.loadKnowledgeBase();
       
-      // Create a prompt that combines the query with the knowledge base
-      const prompt = `
-Based on the following knowledge base about $BTB, please provide a relevant and concise response to the query.
-
-Knowledge Base:
-${knowledgeBase}
-
-Query: ${query}
-
-Please provide a clear, concise response that directly addresses the query using information from the knowledge base.
-`;
-
-      return prompt;
+      // Just return the knowledge base content
+      // The prompt engineering happens in BTBTweetService
+      return knowledgeBase;
     } catch (error) {
       logger.error('Failed to search knowledge base:', error);
-      throw error;
+      // Return empty string if knowledge base fails to load
+      return '';
     }
   }
 }
