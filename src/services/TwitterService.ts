@@ -155,15 +155,18 @@ export class TwitterService {
         })
       );
 
-      if (!response.data || !Array.isArray(response.data)) {
-        logger.warn('No mentions found or invalid response format', response);
+      // The response is a paginator object, extract tweets
+      const tweetsArray = response.tweets || response.data || [];
+      
+      if (!Array.isArray(tweetsArray)) {
+        logger.warn('No mentions found or invalid response format');
         return { 
           mentions: [], 
           rateLimit: response.rateLimit as RateLimit 
         };
       }
 
-      const tweets = response.data.map((tweet: TweetV2) => ({
+      const tweets = tweetsArray.map((tweet: TweetV2) => ({
         id: tweet.id,
         text: tweet.text,
         authorId: tweet.author_id || '',
