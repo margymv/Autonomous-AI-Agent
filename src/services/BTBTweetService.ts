@@ -97,7 +97,14 @@ export class BTBTweetService {
           }
 
           // Get knowledge base context
-          const prompt = await this.knowledgeBaseService.searchKnowledge(question);
+          const knowledgeContext = await this.knowledgeBaseService.searchKnowledge(question);
+          
+          // Create prompt with word limit instruction
+          const prompt = `Based on this context about BTB Finance: ${knowledgeContext}
+          
+          Please answer this question: "${question}"
+          
+          IMPORTANT: Keep your response under 200 words and make it suitable for a Twitter reply. Be concise and informative.`;
 
           // Get OpenRouter's response
           const claudeResponse = await this.openRouterService.getResponse(prompt);
@@ -133,15 +140,25 @@ export class BTBTweetService {
   }
 
   private formatTwitterResponse(response: string): string {
-    // Twitter's character limit is 280
-    const MAX_LENGTH = 280;
+    // Twitter's character limit is 280 characters
+    const MAX_CHARS = 280;
+    const MAX_WORDS = 200;
     
-    if (response.length <= MAX_LENGTH) {
+    // First check word count
+    const words = response.trim().split(/\s+/);
+    if (words.length > MAX_WORDS) {
+      // Truncate to 200 words
+      response = words.slice(0, MAX_WORDS).join(' ') + '...';
+      logger.warn(`Response truncated from ${words.length} to ${MAX_WORDS} words`);
+    }
+    
+    // Then check character count
+    if (response.length <= MAX_CHARS) {
       return response;
     }
 
-    // If response is too long, truncate it and add an ellipsis
-    return response.substring(0, MAX_LENGTH - 3) + '...';
+    // If still too long in characters, truncate further
+    return response.substring(0, MAX_CHARS - 3) + '...';
   }
 
   // Start processing tweets at regular intervals
