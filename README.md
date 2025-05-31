@@ -7,7 +7,7 @@ An intelligent Twitter bot that monitors mentions of $BTB, provides information 
 ## Features
 
 - 🐦 **Twitter Integration**: Monitors mentions, replies to tweets, and posts updates
-- 🤖 **AI-Powered Responses**: Uses Claude 3.5 Sonnet via OpenRouter for intelligent replies
+- 🤖 **AI-Powered Responses**: Uses any AI model from OpenRouter (Claude, GPT-4, Gemini, etc.)
 - 📚 **Knowledge Base**: Maintains information about BTB Finance for accurate responses
 - 🔄 **Real-time Processing**: Continuously monitors Twitter for new mentions
 - 💰 **Wallet Integration**: Ready for future cryptocurrency features
@@ -53,7 +53,10 @@ npm install
 
 1. Sign up at [OpenRouter](https://openrouter.ai)
 2. Generate an API key
-3. Ensure you have credits for Claude 3.5 Sonnet usage
+3. Choose your preferred AI model from [available models](https://openrouter.ai/models)
+   - Free options: deepseek/deepseek-r1-0528-qwen3-8b:free, nousresearch/hermes-3-llama-3.1-405b:free
+   - Premium options: anthropic/claude-3.5-sonnet, openai/gpt-4-turbo, google/gemini-pro
+4. Add credits if using premium models
 
 ### 5. Configure Environment Variables
 
@@ -73,7 +76,8 @@ TWITTER_CLIENT_SECRET=your_client_secret_here
 
 # OpenRouter API Configuration
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
+# Choose any model from https://openrouter.ai/models
+OPENROUTER_MODEL=your_preferred_model_here
 
 # Ethereum Wallet Configuration (optional)
 WALLET_PRIVATE_KEY=your_wallet_private_key_here
@@ -135,7 +139,7 @@ This will fetch the latest mentions of your account.
 2. **$BTB Detection**: Filters mentions containing "$BTB"
 3. **Question Extraction**: Extracts the actual question from the tweet
 4. **Knowledge Base Search**: Searches the local knowledge base for relevant information
-5. **AI Response Generation**: Uses Claude 3.5 Sonnet to generate an appropriate response
+5. **AI Response Generation**: Uses your chosen OpenRouter model to generate an appropriate response
 6. **Tweet Reply**: Posts the response as a reply to the original tweet
 
 ## Project Structure

@@ -8,9 +8,10 @@ export class OpenRouterService {
   private maxRetries = 3;
   private retryDelay = 5000; // 5 seconds between retries
 
-  constructor(apiKey: string, model: string = 'anthropic/claude-3.5-sonnet') {
+  constructor(apiKey: string, model: string) {
     this.apiKey = apiKey;
     this.model = model;
+    logger.info(`OpenRouter initialized with model: ${model}`);
   }
 
   private async delay(ms: number): Promise<void> {
