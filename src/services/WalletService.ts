@@ -1,46 +1,46 @@
-import { ethers } from 'ethers';
+import { ethers, JsonRpcProvider, formatEther, parseEther } from 'ethers';
 import { WalletTransaction } from '../types';
 import { logger } from '../utils/logger';
 
 export class WalletService {
   private wallet: ethers.Wallet;
-  private provider: ethers.JsonRpcProvider;
+  private provider: JsonRpcProvider;
 
   constructor(privateKey: string, rpcUrl: string) {
-    this.provider = new ethers.JsonRpcProvider(rpcUrl);
+    this.provider = new JsonRpcProvider(rpcUrl);
     this.wallet = new ethers.Wallet(privateKey, this.provider);
+    logger.info('Initialized wallet service');
   }
 
   async getBalance(): Promise<string> {
     try {
-      const balance = await this.wallet.getBalance();
-      return ethers.formatEther(balance);
+      const balance = await this.provider.getBalance(this.wallet.address);
+      return formatEther(balance);
     } catch (error) {
-      logger.error('Error getting wallet balance:', error);
+      logger.error('Failed to get wallet balance:', error);
       throw error;
     }
   }
 
-  async sendTransaction(
-    to: string,
-    amount: string,
-    currency: string = 'ETH'
-  ): Promise<WalletTransaction> {
+  async sendTransaction(to: string, amount: string): Promise<WalletTransaction> {
     try {
+      logger.info(`Sending ${amount} ETH to ${to}`);
+
       const tx = await this.wallet.sendTransaction({
         to,
-        value: ethers.parseEther(amount),
+        value: parseEther(amount),
       });
 
       const transaction: WalletTransaction = {
-        id: tx.hash,
+        id: tx.nonce.toString(),
+        hash: tx.hash,
         from: this.wallet.address,
         to,
+        value: amount,
         amount,
-        currency,
+        currency: 'ETH',
         timestamp: new Date(),
         status: 'pending',
-        txHash: tx.hash,
       };
 
       // Wait for transaction confirmation
@@ -48,25 +48,33 @@ export class WalletService {
       
       return {
         ...transaction,
-        status: receipt.status === 1 ? 'completed' : 'failed',
+        status: receipt?.status === 1 ? 'completed' : 'failed',
       };
     } catch (error) {
-      logger.error('Error sending transaction:', error);
+      logger.error('Failed to send transaction:', error);
       throw error;
     }
   }
 
-  async getTransactionStatus(txHash: string): Promise<'pending' | 'completed' | 'failed'> {
+  async getTransaction(hash: string): Promise<WalletTransaction> {
     try {
-      const tx = await this.provider.getTransaction(txHash);
+      const tx = await this.provider.getTransaction(hash);
       if (!tx) {
-        return 'failed';
+        throw new Error(`Transaction ${hash} not found`);
       }
 
-      const receipt = await tx.wait();
-      return receipt.status === 1 ? 'completed' : 'failed';
+      return {
+        hash: tx.hash,
+        from: tx.from,
+        to: tx.to || '',
+        value: formatEther(tx.value),
+        amount: formatEther(tx.value),
+        currency: 'ETH',
+        timestamp: new Date(),
+        status: tx.blockNumber ? 'confirmed' : 'pending',
+      };
     } catch (error) {
-      logger.error('Error getting transaction status:', error);
+      logger.error('Failed to get transaction:', error);
       throw error;
     }
   }

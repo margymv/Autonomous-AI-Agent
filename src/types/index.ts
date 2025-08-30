@@ -48,9 +48,10 @@ export interface AgentConfig {
     apiSecret: string;
     accessToken: string;
     accessTokenSecret: string;
+    bearerToken: string;
   };
   llm: {
-    provider: 'claude';
+    provider: 'claude' | 'openrouter';
     apiKey: string;
     model: string;
     maxTokens: number;
